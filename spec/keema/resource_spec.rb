@@ -50,7 +50,6 @@ RSpec.describe Keema::Resource do
           tags: ['food', 'sushi'],
           created_at: String
         )
-        pp hash
       end
     end
 

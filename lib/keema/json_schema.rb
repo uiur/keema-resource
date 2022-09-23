@@ -1,24 +1,6 @@
 module Keema
   class JsonSchema
-    attr_reader :openapi, :depth
-    def initialize(openapi: false, depth: 0)
-      @openapi = openapi
-      @depth = depth
-    end
-
-    def convert_type(type, nullable: false)
-      hash = convert_real_type(type)
-      if nullable
-        if openapi
-          hash[:nullable] = true
-        else
-          hash[:type] = [hash[:type], :null]
-        end
-      end
-      hash
-    end
-
-    def convert_real_type(type)
+    def self.convert_type(type, openapi: false)
       case
       when type == Integer
         { type: :integer }
@@ -30,30 +12,12 @@ module Keema
         { type: :string, format: :date }
       when type == Time
         { type: :string, format: :'date-time' }
-      when type == ::Keema::Type::Bool
-        { type: :boolean }
-      when type.is_a?(::Keema::Type::Enum)
-        result = convert_type(type.values.first.class)
-        result[:enum] = type.values
-        result
       when type.is_a?(Array)
-        item_type = type.first
-        { type: :array, items: convert_type(item_type) }
-      when type.respond_to?(:is_keema_resource_class?)
-        type = type.is_a?(::Class) ? type.new : type
-        {
-          title: type.ts_type,
-          type: :object,
-          properties: type.fields.map do |name, field|
-            [
-              name, ::Keema::JsonSchema.new(openapi: openapi, depth: depth + 1).convert_type(field.type, nullable: field.null),
-            ]
-          end.to_h,
-          additionalProperties: false,
-          required: type.fields.values.map(&:name),
-        }
+        ::Keema::Type::Array.new(type.first).to_json_schema(openapi: openapi)
+      when type.respond_to?(:to_json_schema)
+        type.to_json_schema(openapi: openapi)
       else
-        raise "unsupported type #{type}"
+        raise "Converting Type #{type} into json schema is not supported"
       end
     end
 

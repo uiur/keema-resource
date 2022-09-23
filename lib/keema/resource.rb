@@ -2,20 +2,9 @@ require 'time'
 require_relative 'field'
 require_relative 'json_schema'
 require_relative 'resource/field_selector'
+require_relative 'type'
 
 module Keema
-  module Type
-    class Bool; end
-
-    class Enum
-      attr_reader :values
-      def initialize(values)
-        @values = values
-      end
-    end
-  end
-
-
   class Resource
     VERSION = "0.1.0"
 
@@ -74,7 +63,22 @@ module Keema
     end
 
     def to_json_schema(openapi: false)
-      ::Keema::JsonSchema.new(openapi: openapi).convert_type(self)
+      type = self
+      {
+        title: type.ts_type,
+        type: :object,
+        properties: type.fields.map do |name, field|
+          field_type = field.null ? ::Keema::Type::Nullable.new(field.type) : field.type
+          [
+            name, ::Keema::JsonSchema.convert_type(
+              field_type,
+              openapi: openapi
+            ),
+          ]
+        end.to_h,
+        additionalProperties: false,
+        required: type.fields.values.map(&:name),
+      }
     end
 
     def serialize(object)
