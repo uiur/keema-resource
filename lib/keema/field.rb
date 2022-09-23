@@ -18,8 +18,8 @@ module Keema
       end
     end
 
-    def to_json_schema(openapi: false, use_ref: false)
-      ::Keema::JsonSchema.new(openapi: openapi, use_ref: use_ref).convert_type(type)
+    def to_json_schema(openapi: false)
+      ::Keema::JsonSchema.new(openapi: openapi).convert_type(type)
     end
 
     def item_type

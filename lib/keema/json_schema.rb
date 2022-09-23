@@ -1,9 +1,8 @@
 module Keema
   class JsonSchema
-    attr_reader :openapi, :use_ref, :depth
-    def initialize(openapi: false, use_ref: false, depth: 0)
+    attr_reader :openapi, :depth
+    def initialize(openapi: false, depth: 0)
       @openapi = openapi
-      @use_ref = use_ref
       @depth = depth
     end
 
@@ -42,24 +41,17 @@ module Keema
         { type: :array, items: convert_type(item_type) }
       when type.respond_to?(:is_keema_resource_class?)
         type = type.is_a?(::Class) ? type.new : type
-        if depth > 0 && use_ref
-          {
-            tsType: type.ts_type,
-            tsTypeImport: self.class.underscore(type.ts_type),
-          }
-        else
-          {
-            title: type.ts_type,
-            type: :object,
-            properties: type.fields.map do |name, field|
-              [
-                name, ::Keema::JsonSchema.new(openapi: openapi, use_ref: use_ref, depth: depth + 1).convert_type(field.type, nullable: field.null),
-              ]
-            end.to_h,
-            additionalProperties: false,
-            required: type.fields.values.map(&:name),
-          }
-        end
+        {
+          title: type.ts_type,
+          type: :object,
+          properties: type.fields.map do |name, field|
+            [
+              name, ::Keema::JsonSchema.new(openapi: openapi, depth: depth + 1).convert_type(field.type, nullable: field.null),
+            ]
+          end.to_h,
+          additionalProperties: false,
+          required: type.fields.values.map(&:name),
+        }
       else
         raise "unsupported type #{type}"
       end

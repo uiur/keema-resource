@@ -44,8 +44,8 @@ module Keema
         true
       end
 
-      def to_json_schema(openapi: false, use_ref: false)
-        new.to_json_schema(openapi: openapi, use_ref: use_ref)
+      def to_json_schema(openapi: false)
+        new.to_json_schema(openapi: openapi)
       end
 
       def serialize(object, context: {})
@@ -73,8 +73,8 @@ module Keema
       true
     end
 
-    def to_json_schema(openapi: false, use_ref: false)
-      ::Keema::JsonSchema.new(openapi: openapi, use_ref: use_ref).convert_type(self)
+    def to_json_schema(openapi: false)
+      ::Keema::JsonSchema.new(openapi: openapi).convert_type(self)
     end
 
     def serialize(object)

@@ -65,7 +65,6 @@ RSpec.describe Keema::Resource do
         )
         expect(ProductResource.to_json_schema(openapi: true)).to match(Hash)
         puts JSON.pretty_generate(ProductResource.to_json_schema)
-        puts JSON.pretty_generate(ProductResource.to_json_schema(use_ref: true))
       end
     end
 
@@ -141,23 +140,6 @@ RSpec.describe Keema::Resource do
                     id: Hash,
                     url: Hash
                   )
-                )
-              )
-            )
-          ))
-        end
-      end
-
-      describe 'to_json_schema(use_ref: true)' do
-        it 'returns NestedHasMany resource as reference' do
-          puts JSON.pretty_generate(NestedHasMany::ProductResource.to_json_schema(use_ref: true))
-          expect(NestedHasMany::ProductResource.to_json_schema(use_ref: true)).to match(hash_including(
-            type: :object,
-            properties: hash_including(
-              product_images: hash_including(
-                type: :array,
-                items: hash_including(
-                  tsType: String
                 )
               )
             )
