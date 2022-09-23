@@ -1,8 +1,48 @@
-# Keema::Resource
+# keema-resource
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/keema/resource`. To experiment with that code, run `bin/console` for an interactive prompt.
+keema-resource is a JSON object presenter with the capability of generating JSON Schema / OpenAPI Schema.
+It provides minimalistic-style DSL to describe JSON Schema.
 
-TODO: Delete this and the text above, and describe your gem
+It's intended to be used as an alternative to active_model_serializers or jbuilder.
+
+## Usage
+
+```ruby
+class ProductResource < Keema::Resource
+  field :id, Integer
+  field :name, String
+  field :price, Float
+  field :status, enum(:published, :unpublished)
+  field :description, String, null: true
+  field :image_url?, String  # optional
+
+  field :out_of_stock, Bool
+  field :tags, [String]
+
+  field :created_at, Time
+end
+
+# Generate json schema
+ProductResource.to_json_schema
+
+# Generate json schema (openapi compatible)
+ProductResource.to_json_schema(openapi: true)
+
+# Serialize object to json representation
+product = Product.new(
+  id: 1,
+  name: "foo",
+  status: 'published',
+  price: 12.3,
+  description: nil,
+  out_of_stock: false,
+  tags: ['food', 'sushi'],
+  image_url: 'foo.png',
+  created_at: Time.now
+)
+ProductResource.serialize(product)
+```
+
 
 ## Installation
 
@@ -19,10 +59,6 @@ And then execute:
 Or install it yourself as:
 
     $ gem install keema-resource
-
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
