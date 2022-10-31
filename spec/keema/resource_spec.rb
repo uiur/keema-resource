@@ -38,18 +38,31 @@ RSpec.describe Keema::Resource do
     end
 
     describe '#serialize' do
-      it 'returns serializable hash' do
-        hash = ProductResource.serialize(product)
-        expect(hash).to match(
-          id: 1,
-          name: 'foo',
-          status: 'published',
-          price: 12.3,
-          description: nil,
-          out_of_stock: false,
-          tags: ['food', 'sushi'],
-          created_at: String
-        )
+      context 'valid' do
+        it 'returns serializable hash' do
+          hash = ProductResource.serialize(product)
+          expect(hash).to match(
+            id: 1,
+            name: 'foo',
+            status: 'published',
+            price: 12.3,
+            description: nil,
+            out_of_stock: false,
+            tags: ['food', 'sushi'],
+            created_at: String
+          )
+        end
+      end
+
+      context 'invalid' do
+        InvalidProduct = Struct.new(:id, :name, keyword_init: true)
+
+        it do
+          invalid_product = InvalidProduct.new(id: 1, name: 'foo')
+          expect {
+            ProductResource.serialize(invalid_product)
+          }.to raise_error(::Keema::Resource::RuntimeError)
+        end
       end
     end
 

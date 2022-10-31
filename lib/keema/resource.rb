@@ -10,6 +10,8 @@ module Keema
 
     Bool = ::Keema::Type::Bool
 
+    class RuntimeError < StandardError; end
+
     class <<self
       def field(name, type, null: false, optional: false, **options)
         @fields ||= {}
@@ -110,7 +112,7 @@ module Keema
           elsif object.respond_to?(:"#{field_name}?")
             object.public_send(:"#{field_name}?")
           else
-            raise ::Keema::RuntimeError.new("object #{object.inspect} does not respond to `#{field_name}` (#{self.class.name})")
+            raise ::Keema::Resource::RuntimeError.new("object #{object.inspect} does not respond to `#{field_name}` (#{self.class.name})")
           end
 
         type = field.type

@@ -17,7 +17,7 @@ module Keema
       when type.respond_to?(:to_json_schema)
         type.to_json_schema(openapi: openapi)
       else
-        raise "Converting Type #{type} into json schema is not supported"
+        raise "Converting type #{type} into json schema is not supported"
       end
     end
 
