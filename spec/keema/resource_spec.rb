@@ -80,6 +80,15 @@ RSpec.describe Keema::Resource do
       end
     end
 
+    describe '.to_openapi' do
+      it 'generetes openapi schema' do
+        expect(ProductResource.to_openapi).to match(hash_including(
+          type: :object,
+          properties: Hash,
+        ))
+      end
+    end
+
     describe '.select' do
       it 'returns select resource class' do
         select_resource_klass = ProductResource.select([:id, :name])

@@ -35,6 +35,10 @@ module Keema
         true
       end
 
+      def to_openapi
+        to_json_schema(openapi: true)
+      end
+
       def to_json_schema(openapi: false)
         new.to_json_schema(openapi: openapi)
       end
