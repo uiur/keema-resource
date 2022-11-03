@@ -78,9 +78,9 @@ module Keema
     def to_h
       self.class.parameters.map do |parameter_name, _|
         if object.has_key?(parameter_name)
-          [parameter_name, object[parameter_name]]
+          [parameter_name, public_send(parameter_name)]
         end
-      end.to_h
+      end.compact.to_h
     end
   end
 end

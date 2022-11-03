@@ -19,6 +19,24 @@ RSpec.describe Keema::Parameters do
     end
   end
 
+  describe '#to_h' do
+    describe 'overriding getter method' do
+      class NameParameters < Keema::Parameters
+        field :name, String, in: :body
+
+        def name
+          object[:name].downcase
+        end
+      end
+
+      it 'returns overriden method value' do
+        expect(NameParameters.new(name: 'HELLO').to_h).to match(
+          name: 'hello'
+        )
+      end
+    end
+  end
+
   class PaginationParameters < Keema::Parameters
     field :page, Integer
     field :per_page, Integer
@@ -73,7 +91,6 @@ RSpec.describe Keema::Parameters do
         end
       end
     end
-
   end
 
   class PaginationWithDefaultParameters < Keema::Parameters
