@@ -70,12 +70,8 @@ module Keema
         title: type.ts_type,
         type: :object,
         properties: type.fields.map do |name, field|
-          field_type = field.null ? ::Keema::Type::Nullable.new(field.type) : field.type
           [
-            name, ::Keema::JsonSchema.convert_type(
-              field_type,
-              openapi: openapi
-            ),
+            name, field.to_json_schema(openapi: openapi),
           ]
         end.to_h,
         additionalProperties: false,

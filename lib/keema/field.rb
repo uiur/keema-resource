@@ -1,3 +1,6 @@
+require_relative 'json_schema'
+require_relative 'type'
+
 module Keema
   class Field
     attr_reader :name, :type, :null, :optional
@@ -19,7 +22,8 @@ module Keema
     end
 
     def to_json_schema(openapi: false)
-      ::Keema::JsonSchema.new(openapi: openapi).convert_type(type)
+      field_type = null ? ::Keema::Type::Nullable.new(type) : type
+      ::Keema::JsonSchema.convert_type(field_type, openapi: openapi)
     end
 
     def item_type
