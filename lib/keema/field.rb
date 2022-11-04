@@ -3,14 +3,16 @@ require_relative 'type'
 
 module Keema
   class Field
-    attr_reader :name, :type, :null, :optional
+    attr_reader :name, :type, :null, :optional, :default, :options
     attr_writer :type
-    def initialize(name:, type:, null: false, optional: false)
+    def initialize(name:, type:, null: false, optional: false, default: nil, **options)
       parsed_name, parsed_optional = parse_name(name)
       @name = parsed_name
       @type = convert_type(type)
       @null = null
       @optional = parsed_optional || optional
+      @default = default
+      @options = options
     end
 
     def convert_type(type)
@@ -23,7 +25,7 @@ module Keema
 
     def to_json_schema(openapi: false)
       field_type = null ? ::Keema::Type::Nullable.new(type) : type
-      ::Keema::JsonSchema.convert_type(field_type, openapi: openapi)
+      ::Keema::JsonSchema.convert_type(field_type, openapi: openapi).merge(options)
     end
 
     def item_type

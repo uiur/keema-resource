@@ -1,11 +1,12 @@
+require_relative 'resource'
+
 module Keema
   class Parameters
     class Parameter
-      attr_reader :field, :default
-      def initialize(field:, in:, default: nil, options: {})
+      attr_reader :field
+      def initialize(field:, in:, options: {})
         @field = field
         @location_in = binding.local_variable_get(:in)
-        @default = default
         @options = options
       end
 
@@ -22,8 +23,9 @@ module Keema
         }.merge(options)
       end
 
-      private
-      attr_reader :location_in, :options
+      def in_body?
+        location_in == :body
+      end
 
       def required?
         if location_in == :path
@@ -33,21 +35,37 @@ module Keema
           !field.optional
         end
       end
+
+      private
+      attr_reader :location_in, :options
     end
 
     class <<self
-      attr_reader :parameters
+      attr_reader :parameters, :resource_class
       def field(name, type, in: :query, null: false, optional: false, default: nil, **options)
         @parameters ||= {}
-        field = ::Keema::Field.new(name: name, type: type, null: null, optional: optional)
-        parameter = ::Keema::Parameters::Parameter.new(
-          field: field,
-          in: binding.local_variable_get(:in),
+        @resource_class ||= Class.new(::Keema::Resource)
+        field = ::Keema::Field.new(
+          name: name,
+          type: type,
+          null: null,
+          optional: optional,
           default: default,
-          options: options
+          **options,
         )
-        @parameters[parameter.name] = parameter
-        define_parameter_getter(parameter)
+
+        location_in = binding.local_variable_get(:in)
+        if location_in == :body
+          resource_class.fields[field.name] = field
+        else
+          parameter = ::Keema::Parameters::Parameter.new(
+            field: field,
+            in: location_in,
+            options: options
+          )
+          @parameters[parameter.name] = parameter
+        end
+        define_parameter_getter(field)
       end
 
       def enum(*values)
@@ -55,16 +73,23 @@ module Keema
       end
 
       def to_openapi
-        parameters.map do |_, parameter|
-          parameter.to_openapi
-        end
+        {
+          parameters: parameters.values.map(&:to_openapi),
+          requestBody: {
+            content: {
+              'application/json' => {
+                schema: resource_class.to_openapi
+              }
+            }
+          }
+        }
       end
 
       private
 
-      def define_parameter_getter(parameter)
-        define_method(parameter.name) do
-          object[parameter.name] || parameter.default
+      def define_parameter_getter(field)
+        define_method(field.name) do
+          object[field.name] || field.default
         end
       end
     end
@@ -76,9 +101,9 @@ module Keema
     end
 
     def to_h
-      self.class.parameters.map do |parameter_name, _|
-        if object.has_key?(parameter_name)
-          [parameter_name, public_send(parameter_name)]
+      (self.class.parameters.transform_values(&:field).to_a + self.class.resource_class.fields.to_a).map do |field_name, _|
+        if object.has_key?(field_name)
+          [field_name, public_send(field_name)]
         end
       end.compact.to_h
     end

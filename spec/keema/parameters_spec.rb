@@ -10,19 +10,32 @@ RSpec.describe Keema::Parameters do
     end
 
     it 'returns openapi parameter objects as hash' do
-      expect(CreateRestaurantParameters.to_openapi).to match([
-        hash_including(name: :id, in: :path, schema: { type: :integer }, required: true),
-        hash_including(name: :name, in: :body, schema: { type: :string }, required: true),
-        hash_including(name: :address, in: :body, schema: { type: :string, nullable: true }, required: false),
-        hash_including(name: :genre, in: :body, schema: { type: :string, enum: ['Sushi', 'Ramen'] }, required: true, description: 'genre of food')
-      ])
+      expect(CreateRestaurantParameters.to_openapi).to match({
+        parameters: [
+          hash_including(name: :id, in: :path, schema: { type: :integer }, required: true),
+        ],
+        requestBody: {
+          content: {
+            'application/json' => {
+              schema: hash_including({
+                type: :object,
+                properties: {
+                  name: { type: :string },
+                  address:  { type: :string, nullable: true },
+                  genre: { type: :string, enum: ['Sushi', 'Ramen'], description: 'genre of food', example: 'Sushi' }
+                }
+              })
+            }
+          }
+        }
+      })
     end
   end
 
   describe '#to_h' do
     describe 'overriding getter method' do
       class NameParameters < Keema::Parameters
-        field :name, String, in: :body
+        field :name, String, in: :query
 
         def name
           object[:name].downcase

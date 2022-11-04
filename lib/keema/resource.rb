@@ -23,9 +23,9 @@ module Keema
       #   field :id, Integer
       #   field :name, String
       #   field :address, String, null: true
-      def field(name, type, null: false, optional: false, **options)
+      def field(name, type, null: false, optional: false, default: nil, **options)
         @fields ||= {}
-        field = ::Keema::Field.new(name: name, type: type, null: null, optional: optional)
+        field = ::Keema::Field.new(name: name, type: type, null: null, optional: optional, default: default)
         @fields[field.name] = field
       end
 
@@ -89,15 +89,15 @@ module Keema
     def to_json_schema(openapi: false)
       type = self
       {
-        title: type.json_schema_title,
+        title: json_schema_title,
         type: :object,
-        properties: type.fields.map do |name, field|
+        properties: self.class.fields.map do |name, field|
           [
             name, field.to_json_schema(openapi: openapi),
           ]
         end.to_h,
         additionalProperties: false,
-        required: type.fields.values.map(&:name),
+        required: self.class.fields.values.reject(&:optional).map(&:name),
       }
     end
 
@@ -114,7 +114,7 @@ module Keema
     end
 
     def json_schema_title
-      self.class.name&.gsub('::', '')
+      self.class.name&.gsub('::', '') || ''
     end
 
     private
@@ -156,7 +156,10 @@ module Keema
           end
         end
 
-        hash[field_name] = is_array ? result : result.first
+        hash[field_name] = (is_array ? result : result.first)
+        if field.default
+          hash[field_name] ||= field.default
+        end
       end
 
       @object = nil
