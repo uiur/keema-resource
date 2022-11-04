@@ -13,6 +13,15 @@ module Keema
     class RuntimeError < StandardError; end
 
     class <<self
+      # Define a field of json representation
+      # @param name [Symbol] Field name
+      # @param name [Class] Field type such as Integer, String etc.
+      # @param null [Boolean] Whether the field value can be null. Default is not null.
+      # @param optional [Boolean] Whether the field can be not defined. Default is not optional, which means required.
+      # @example
+      #   field :id, Integer
+      #   field :name, String
+      #   field :address, String, null: true
       def field(name, type, null: false, optional: false, **options)
         @fields ||= {}
         field = ::Keema::Field.new(name: name, type: type, null: null, optional: optional)
@@ -35,14 +44,26 @@ module Keema
         true
       end
 
+      # Return openapi-compatible json schema
+      # @return [Hash] json schema
       def to_openapi
         to_json_schema(openapi: true)
       end
 
+      # Return JSON Schema
+      # @param openapi [Boolean] If true, return OpenAPI schema
+      # @return [Hash] The JSON Schema
       def to_json_schema(openapi: false)
         new.to_json_schema(openapi: openapi)
       end
 
+      # Return json serializable hash
+      # @param object [Object] object
+      # @param context [Hash] context can be accessed from serializers in this serialization
+      # @return [Hash] The json representation of the object
+      # @example
+      #   UserResource.serialize(user)
+      #   # => { id: 1, name: 'John' }
       def serialize(object, context: {})
         new(context: context).serialize(object)
       end
@@ -52,10 +73,6 @@ module Keema
     def initialize(context: {}, fields: [:*])
       @context = context
       @selected_fields = fields
-    end
-
-    def ts_type
-      self.class.name&.gsub('::', '')
     end
 
     def fields
@@ -71,7 +88,7 @@ module Keema
     def to_json_schema(openapi: false)
       type = self
       {
-        title: type.ts_type,
+        title: type.json_schema_title,
         type: :object,
         properties: type.fields.map do |name, field|
           [
@@ -83,6 +100,7 @@ module Keema
       }
     end
 
+
     def serialize(object)
       is_hash_like = object.respond_to?(:keys) || object.is_a?(Struct)
       if !is_hash_like && object.respond_to?(:each)
@@ -92,6 +110,10 @@ module Keema
       else
         serialize_one(object)
       end
+    end
+
+    def json_schema_title
+      self.class.name&.gsub('::', '')
     end
 
     private

@@ -26,7 +26,7 @@ end
 ProductResource.to_json_schema
 
 # Generate json schema (openapi compatible)
-ProductResource.to_json_schema(openapi: true)
+ProductResource.to_openapi
 
 # Serialize object to json representation
 product = Product.new(
@@ -41,6 +41,17 @@ product = Product.new(
   created_at: Time.now
 )
 ProductResource.serialize(product)
+#=>
+# {
+#   :id => 1,
+#   :name => "foo",
+#   :price => 12.3,
+#   :status => "published",
+#   :description => nil,
+#   :out_of_stock => false,
+#   :tags => ["food", "sushi"],
+#   :created_at => "2022-11-04T09:49:30.297+09:00"
+# }
 ```
 
 
