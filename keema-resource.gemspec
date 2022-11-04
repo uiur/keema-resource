@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "lib/keema/resource"
-require_relative "lib/keema/parameters"
 
 Gem::Specification.new do |spec|
   spec.name = "keema-resource"

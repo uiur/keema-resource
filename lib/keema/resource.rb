@@ -3,6 +3,7 @@ require_relative 'field'
 require_relative 'json_schema'
 require_relative 'resource/field_selector'
 require_relative 'type'
+require_relative 'parameters'
 
 module Keema
   class Resource
