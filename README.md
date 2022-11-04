@@ -1,4 +1,4 @@
-# keema-resource
+# keema-resource ![test](https://github.com/uiur/keema-resource/actions/workflows/main.yml/badge.svg)
 
 keema-resource is a JSON object presenter with the capability of generating JSON Schema / OpenAPI Schema.
 It provides minimalistic-style DSL to describe JSON Schema.
