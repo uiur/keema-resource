@@ -76,35 +76,55 @@ RSpec.describe Keema::Resource do
     end
 
     describe '.to_json_schema' do
-      it 'generates json schema' do
-        debug ProductResource.to_json_schema
-        expect(ProductResource.to_json_schema).to match(
-          title: 'ProductResource',
-          type: :object,
-          properties: {
-            id: { type: :integer },
-            name: { type: :string },
-            price: { type: :number },
-            status: { type: :string, enum: [:published, :unpublished] },
-            description: { type: [:string, :null] },
-            image_url: { type: :string },
-            out_of_stock: { type: :boolean },
-            tags: { type: :array, items: { type: :string } },
-            created_at: { type: :string, format: :'date-time' }
-          },
-          additionalProperties: false,
-          required: [
-            :id,
-            :name,
-            :price,
-            :status,
-            :description,
-            # :image_url is optional
-            :out_of_stock,
-            :tags,
-            :created_at,
-        ])
-        expect(ProductResource.to_json_schema(openapi: true)).to match(Hash)
+      context 'default' do
+        it 'generates json schema' do
+          debug ProductResource.to_json_schema
+          expect(ProductResource.to_json_schema).to match(
+            title: 'ProductResource',
+            type: :object,
+            properties: {
+              id: { type: :integer },
+              name: { type: :string },
+              price: { type: :number },
+              status: { type: :string, enum: [:published, :unpublished] },
+              description: { type: [:string, :null] },
+              image_url: { type: :string },
+              out_of_stock: { type: :boolean },
+              tags: { type: :array, items: { type: :string } },
+              created_at: { type: :string, format: :'date-time' }
+            },
+            additionalProperties: false,
+            required: [
+              :id,
+              :name,
+              :price,
+              :status,
+              :description,
+              # :image_url is optional
+              :out_of_stock,
+              :tags,
+              :created_at,
+          ])
+        end
+      end
+
+      context 'select' do
+        it 'generates json schema' do
+          debug ProductResource.select([:id, :name]).to_json_schema
+          expect(ProductResource.select([:id, :name]).to_json_schema).to match(
+            title: 'ProductResource',
+            type: :object,
+            properties: {
+              id: { type: :integer },
+              name: { type: :string },
+            },
+            additionalProperties: false,
+            required: [
+              :id,
+              :name,
+            ]
+          )
+        end
       end
     end
 
