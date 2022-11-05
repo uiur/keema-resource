@@ -38,7 +38,7 @@ module Keema
       end
 
       def select(selector)
-        new(fields: selector)
+        new(schema_fields: selector, required_schema_fields: selector)
       end
 
       def is_keema_resource_class?
@@ -71,13 +71,16 @@ module Keema
     end
 
     attr_reader :object, :context, :selected_fields
-    def initialize(context: {}, fields: [:*])
+    def initialize(schema_fields: nil, required_schema_fields: [:*], context: {}, fields: [:*])
       @context = context
       @selected_fields = fields
+      @schema_fields_selector = schema_fields || self.class.fields.keys
+      @required_schema_fields_selector = required_schema_fields
     end
 
-    def fields
-      self.class.fields.select { |field|
+
+    def serialization_fields
+      schema_fields.select { |field|
         field_selector.field_names.include?(field)
       }
     end
@@ -87,17 +90,16 @@ module Keema
     end
 
     def to_json_schema(openapi: false)
-      type = self
       {
         title: json_schema_title,
         type: :object,
-        properties: self.class.fields.map do |name, field|
+        properties: schema_fields.map do |name, field|
           [
             name, field.to_json_schema(openapi: openapi),
           ]
         end.to_h,
         additionalProperties: false,
-        required: self.class.fields.values.reject(&:optional).map(&:name),
+        required: required_schema_fields.values.map(&:name),
       }
     end
 
@@ -119,14 +121,10 @@ module Keema
 
     private
 
-    def field_selector
-      @field_selector ||= FieldSelector.new(resource: self.class, selector: selected_fields)
-    end
-
     def serialize_one(object)
       @object = object
       hash = {}
-      fields.each do |field_name, field|
+      serialization_fields.each do |field_name, field|
         value =
           if respond_to?(field_name)
             send(field_name)
@@ -149,8 +147,12 @@ module Keema
           when sub_type == Time
             value.iso8601(3)
           when value && sub_type.respond_to?(:is_keema_resource_class?) && sub_type.is_keema_resource_class?
-            nested_fields = field_selector.fetch(field_name)
-            sub_type.new(context: context, fields: nested_fields).serialize(value)
+            sub_type.new(
+              schema_fields: schema_field_selector.fetch(field_name),
+              required_schema_fields: required_schema_field_selector.fetch(field_name),
+              fields: field_selector.fetch(field_name),
+              context: context,
+            ).serialize(value)
           else
             value
           end
@@ -165,6 +167,28 @@ module Keema
       @object = nil
 
       hash
+    end
+
+    attr_reader :schema_fields_selector, :required_schema_fields_selector
+
+    def field_selector
+      @field_selector ||= FieldSelector.new(resource: self.class, selector: selected_fields)
+    end
+
+    def schema_field_selector
+      ::Keema::Resource::FieldSelector.new(selector: schema_fields_selector, resource: self.class)
+    end
+
+    def schema_fields
+      self.class.fields.select { |name| schema_field_selector.field_names.include?(name) }
+    end
+
+    def required_schema_field_selector
+      ::Keema::Resource::FieldSelector.new(selector: required_schema_fields_selector, resource: self.class)
+    end
+
+    def required_schema_fields
+      self.class.fields.select { |name| required_schema_field_selector.field_names.include?(name) }
     end
   end
 end
