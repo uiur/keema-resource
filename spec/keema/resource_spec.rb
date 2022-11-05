@@ -161,13 +161,40 @@ RSpec.describe Keema::Resource do
     end
 
     describe '.select' do
-      it 'returns select resource class' do
-        select_resource_klass = ProductResource.select([:id, :name])
-        expect(select_resource_klass.to_json_schema).to match(Hash)
-        expect(select_resource_klass.serialize(product)).to match(
-          id: Integer,
-          name: String
-        )
+      context 'select optional field' do
+        subject(:resource) { ProductResource.select([:id, :image_url]) }
+        it 'returns the field as required' do
+          expect(resource.to_json_schema).to match(hash_including(
+            type: :object,
+            properties: {
+              id: { type: :integer },
+              image_url: { type: :string }
+            },
+            required: [:id, :image_url],
+          ))
+          expect(resource.serialize(product)).to match(
+            id: Integer,
+            image_url: String,
+          )
+        end
+      end
+
+      context 'select required field' do
+        subject(:resource) { ProductResource.select([:id, :name]) }
+        it 'returns select resource class' do
+          expect(resource.to_json_schema).to match(hash_including(
+            type: :object,
+            properties: {
+              id: { type: :integer },
+              name: { type: :string },
+            },
+            required: [:id, :name],
+          ))
+          expect(resource.serialize(product)).to match(
+            id: Integer,
+            name: String
+          )
+        end
       end
     end
   end

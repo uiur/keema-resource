@@ -65,19 +65,18 @@ module Keema
       # @example
       #   UserResource.serialize(user)
       #   # => { id: 1, name: 'John' }
-      def serialize(object, context: {})
-        new(context: context).serialize(object)
+      def serialize(object, context: {}, fields: [:*])
+        new(context: context, fields: fields).serialize(object)
       end
     end
 
     attr_reader :object, :context, :selected_fields
-    def initialize(schema_fields: nil, required_schema_fields: [:*], context: {}, fields: [:*])
+    def initialize(schema_fields: nil, required_schema_fields: nil, context: {}, fields: nil)
       @context = context
-      @selected_fields = fields
+      @selected_fields = fields || [:*]
       @schema_fields_selector = schema_fields || self.class.fields.keys
-      @required_schema_fields_selector = required_schema_fields
+      @required_schema_fields_selector = required_schema_fields || self.class.fields.values.reject(&:optional).map(&:name)
     end
-
 
     def serialization_fields
       schema_fields.select { |field|
@@ -87,6 +86,10 @@ module Keema
 
     def is_keema_resource_class?
       true
+    end
+
+    def to_openapi
+      to_json_schema(openapi: true)
     end
 
     def to_json_schema(openapi: false)
@@ -103,7 +106,6 @@ module Keema
       }
     end
 
-
     def serialize(object)
       is_hash_like = object.respond_to?(:keys) || object.is_a?(Struct)
       if !is_hash_like && object.respond_to?(:each)
@@ -118,6 +120,7 @@ module Keema
     def json_schema_title
       self.class.name&.gsub('::', '') || ''
     end
+
 
     private
 
@@ -169,26 +172,27 @@ module Keema
       hash
     end
 
-    attr_reader :schema_fields_selector, :required_schema_fields_selector
-
-    def field_selector
-      @field_selector ||= FieldSelector.new(resource: self.class, selector: selected_fields)
-    end
-
-    def schema_field_selector
-      ::Keema::Resource::FieldSelector.new(selector: schema_fields_selector, resource: self.class)
-    end
-
     def schema_fields
       self.class.fields.select { |name| schema_field_selector.field_names.include?(name) }
-    end
-
-    def required_schema_field_selector
-      ::Keema::Resource::FieldSelector.new(selector: required_schema_fields_selector, resource: self.class)
     end
 
     def required_schema_fields
       self.class.fields.select { |name| required_schema_field_selector.field_names.include?(name) }
     end
+
+    attr_reader :schema_fields_selector, :required_schema_fields_selector
+
+    def schema_field_selector
+      ::Keema::Resource::FieldSelector.new(selector: schema_fields_selector, default_field_names: [])
+    end
+
+    def required_schema_field_selector
+      ::Keema::Resource::FieldSelector.new(selector: required_schema_fields_selector, default_field_names: [])
+    end
+
+    def field_selector
+      @field_selector ||= FieldSelector.new(selector: selected_fields, default_field_names: required_schema_fields.values.map(&:name))
+    end
+
   end
 end
