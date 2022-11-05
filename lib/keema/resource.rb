@@ -98,6 +98,7 @@ module Keema
         type: :object,
         properties: schema_fields.map do |name, field|
           [
+            # TODO: support nested fields
             name, field.to_json_schema(openapi: openapi),
           ]
         end.to_h,
@@ -128,38 +129,30 @@ module Keema
       @object = object
       hash = {}
       serialization_fields.each do |field_name, field|
-        value =
-          if respond_to?(field_name)
-            send(field_name)
-          elsif object.respond_to?(field_name)
-            object.public_send(field_name)
-          elsif object.respond_to?(:"#{field_name}?")
-            object.public_send(:"#{field_name}?")
-          else
-            raise ::Keema::Resource::RuntimeError.new("object #{object.inspect} does not respond to `#{field_name}` (#{self.class.name})")
-          end
+        value = field_value(field_name)
 
         type = field.type
-
         is_array = type.is_a?(Array)
+        if is_array && !value.is_a?(Array)
+          raise Keema::Resource::RuntimeError.new("expected value type Array but got #{value.class}")
+        end
+
         sub_type = is_array ? type.first : type
         values = is_array ? value : [value]
 
-        result = values.map do |value|
-          case
-          when sub_type == Time
-            value.iso8601(3)
-          when value && sub_type.respond_to?(:is_keema_resource_class?) && sub_type.is_keema_resource_class?
+        result =
+          if value && sub_type.respond_to?(:is_keema_resource_class?) && sub_type.is_keema_resource_class?
             sub_type.new(
               schema_fields: schema_field_selector.fetch(field_name),
               required_schema_fields: required_schema_field_selector.fetch(field_name),
               fields: field_selector.fetch(field_name),
               context: context,
-            ).serialize(value)
+            ).serialize(values)
           else
-            value
+            values.map do |value|
+              serialize_value(value: value, type: sub_type)
+            end
           end
-        end
 
         hash[field_name] = (is_array ? result : result.first)
         if field.default
@@ -170,6 +163,27 @@ module Keema
       @object = nil
 
       hash
+    end
+
+    def serialize_value(value:, type:)
+      case
+      when type == Time
+        value.iso8601(3)
+      else
+        value
+      end
+    end
+
+    def field_value(field_name)
+      if respond_to?(field_name)
+        send(field_name)
+      elsif object.respond_to?(field_name)
+        object.public_send(field_name)
+      elsif object.respond_to?(:"#{field_name}?")
+        object.public_send(:"#{field_name}?")
+      else
+        raise ::Keema::Resource::RuntimeError.new("object #{object.inspect} does not respond to `#{field_name}` (#{self.class.name})")
+      end
     end
 
     def schema_fields
