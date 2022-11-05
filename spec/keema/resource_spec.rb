@@ -246,25 +246,52 @@ RSpec.describe Keema::Resource do
       let(:product) { NestedHasMany::Product.new(id: 1, product_images: product_images) }
 
       describe 'to_json_schema' do
-        it 'returns json schema hash' do
-          puts JSON.pretty_generate(NestedHasMany::ProductResource.to_json_schema)
-          expect(NestedHasMany::ProductResource.to_json_schema).to match(hash_including(
-            type: :object,
-            properties: hash_including(
-              product_images: hash_including(
-                type: :array,
-                items: hash_including(
-                  type: :object,
-                  properties: hash_including(
-                    id: Hash,
-                    url: Hash
+        context 'default schema' do
+          it 'returns json schema hash' do
+            debug NestedHasMany::ProductResource.to_json_schema
+            expect(NestedHasMany::ProductResource.to_json_schema).to match(hash_including(
+              type: :object,
+              properties: hash_including(
+                product_images: hash_including(
+                  type: :array,
+                  items: hash_including(
+                    type: :object,
+                    properties: hash_including(
+                      id: Hash,
+                      url: Hash
+                    )
                   )
                 )
               )
-            )
-          ))
+            ))
+          end
+        end
+
+        context 'selected schema' do
+          subject(:schema) { NestedHasMany::ProductResource.select([:id, product_images: [:id]]).to_json_schema }
+
+          it do
+            debug schema
+            expect(schema).to match(hash_including(
+              type: :object,
+              properties: hash_including(
+                id: Hash,
+                product_images: hash_including(
+                  type: :array,
+                  items: hash_including(
+                    type: :object,
+                    properties: hash_including(
+                      id: Hash,
+                    ),
+                    required: [:id]
+                  )
+                )
+              )
+            ))
+          end
         end
       end
+
 
       describe 'serialize' do
         it 'returns serialized hash' do

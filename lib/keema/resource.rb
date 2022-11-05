@@ -92,14 +92,17 @@ module Keema
       to_json_schema(openapi: true)
     end
 
+
     def to_json_schema(openapi: false)
       {
         title: json_schema_title,
         type: :object,
         properties: schema_fields.map do |name, field|
+          type = apply_selector_to_type(field: field, type: field.type)
+          field_type = field.null ? ::Keema::Type::Nullable.new(type) : type
+
           [
-            # TODO: support nested fields
-            name, field.to_json_schema(openapi: openapi),
+            name, ::Keema::JsonSchema.convert_type(field_type, openapi: openapi).merge(field.options)
           ]
         end.to_h,
         additionalProperties: false,
@@ -206,6 +209,23 @@ module Keema
 
     def field_selector
       @field_selector ||= FieldSelector.new(selector: selected_fields, default_field_names: required_schema_fields.values.map(&:name))
+    end
+
+    def apply_selector_to_type(field:, type:)
+      if type.is_a?(Array)
+        [
+          apply_selector_to_type(field: field, type: type.first)
+        ]
+      else
+        if type.respond_to?(:is_keema_resource_class?) && type.is_keema_resource_class?
+          type.new(
+            schema_fields: schema_field_selector.fetch(field.name),
+            required_schema_fields: required_schema_field_selector.fetch(field.name),
+          )
+        else
+          type
+        end
+      end
     end
 
   end
