@@ -1,6 +1,15 @@
 # frozen_string_literal: true
 require 'json'
 
+def debug(*data)
+  if ENV['DEBUG']
+    require 'irb/color_printer'
+    data.each do |row|
+      ::IRB::ColorPrinter.pp(row)
+    end
+  end
+end
+
 RSpec.describe Keema::Resource do
   it "has a version number" do
     expect(Keema::Resource::VERSION).not_to be nil
@@ -67,25 +76,67 @@ RSpec.describe Keema::Resource do
     end
 
     describe '.to_json_schema' do
-      it 'generetes json schema' do
+      it 'generates json schema' do
+        debug ProductResource.to_json_schema
         expect(ProductResource.to_json_schema).to match(
           title: 'ProductResource',
           type: :object,
-          properties: Hash,
+          properties: {
+            id: { type: :integer },
+            name: { type: :string },
+            price: { type: :number },
+            status: { type: :string, enum: [:published, :unpublished] },
+            description: { type: [:string, :null] },
+            image_url: { type: :string },
+            out_of_stock: { type: :boolean },
+            tags: { type: :array, items: { type: :string } },
+            created_at: { type: :string, format: :'date-time' }
+          },
           additionalProperties: false,
-          required: Array
-        )
+          required: [
+            :id,
+            :name,
+            :price,
+            :status,
+            :description,
+            # :image_url is optional
+            :out_of_stock,
+            :tags,
+            :created_at,
+        ])
         expect(ProductResource.to_json_schema(openapi: true)).to match(Hash)
-        puts JSON.pretty_generate(ProductResource.to_json_schema)
       end
     end
 
     describe '.to_openapi' do
       it 'generetes openapi schema' do
-        expect(ProductResource.to_openapi).to match(hash_including(
+        debug ProductResource.to_openapi
+        expect(ProductResource.to_openapi).to match(
+          title: 'ProductResource',
           type: :object,
-          properties: Hash,
-        ))
+          properties: {
+            id: { type: :integer },
+            name: { type: :string },
+            price: { type: :number },
+            status: { type: :string, enum: [:published, :unpublished] },
+            description: { type: :string, nullable: true },  # openapi uses nullable keyword
+            image_url: { type: :string },
+            out_of_stock: { type: :boolean },
+            tags: { type: :array, items: { type: :string } },
+            created_at: { type: :string, format: :'date-time' }
+          },
+          additionalProperties: false,
+          required: [
+            :id,
+            :name,
+            :price,
+            :status,
+            :description,
+            # :image_url is optional
+            :out_of_stock,
+            :tags,
+            :created_at,
+        ])
       end
     end
 
