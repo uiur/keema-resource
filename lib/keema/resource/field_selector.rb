@@ -1,9 +1,9 @@
 module Keema
   class Resource; end
   class Resource::FieldSelector
-    attr_reader :selector, :resource
-    def initialize(resource:, selector:)
-      @resource = resource
+    attr_reader :selector, :default_field_names
+    def initialize(default_field_names:, selector:)
+      @default_field_names = default_field_names
       @selector = selector
     end
 
@@ -13,7 +13,7 @@ module Keema
           result += item.keys
         else
           if item == :*
-            result += resource.fields.values.reject(&:optional).map(&:name)
+            result += default_field_names
           else
             result += [item]
           end
@@ -22,7 +22,7 @@ module Keema
     end
 
     def fetch(name)
-      nested_map[name] || [:*]
+      nested_map[name]
     end
 
     def nested_map
