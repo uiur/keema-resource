@@ -126,6 +126,28 @@ RSpec.describe Keema::Resource do
           )
         end
       end
+
+      context 'fields are all optional' do
+        class OptionalProductResource < Keema::Resource
+          field :name, String, optional: true
+          field :description, String, optional: true
+        end
+
+        subject(:schema) { OptionalProductResource.to_json_schema }
+
+        it 'generates schema without required' do
+          expect(schema).to match(hash_including(
+            type: :object,
+            properties: {
+              name: { type: :string },
+              description: { type: :string },
+            },
+            additionalProperties: false
+          ))
+
+          expect(schema).not_to have_key(:required)
+        end
+      end
     end
 
     describe '.to_openapi' do

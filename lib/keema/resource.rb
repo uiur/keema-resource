@@ -94,7 +94,7 @@ module Keema
 
 
     def to_json_schema(openapi: false)
-      {
+      json_schema = {
         title: json_schema_title,
         type: :object,
         properties: schema_fields.map do |name, field|
@@ -106,8 +106,14 @@ module Keema
           ]
         end.to_h,
         additionalProperties: false,
-        required: required_schema_fields.values.map(&:name),
       }
+
+      required_field_names = required_schema_fields.values.map(&:name)
+      if required_field_names.size > 0
+        json_schema[:required] = required_field_names
+      end
+
+      json_schema
     end
 
     def serialize(object)
