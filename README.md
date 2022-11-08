@@ -1,11 +1,11 @@
 # keema-resource ![test](https://github.com/uiur/keema-resource/actions/workflows/main.yml/badge.svg)
 
-keema-resource is a JSON object presenter with the power of generating JSON Schema / OpenAPI Schema.
+keema-resource is a JSON object presenter with the power of generating JSON Schema / OpenAPI 3.0 Schema.
 It provides minimalistic-style DSL to describe JSON Schema.
 
 It's intended to be used as an alternative to active_model_serializers or jbuilder.
 
-## Usage
+## Overview
 
 ```ruby
 class ProductResource < Keema::Resource
@@ -21,12 +21,6 @@ class ProductResource < Keema::Resource
 
   field :created_at, Time
 end
-
-# Generate json schema
-ProductResource.to_json_schema
-
-# Generate json schema (openapi compatible)
-ProductResource.to_openapi
 
 # Serialize object to json representation
 product = Product.new(
@@ -52,6 +46,12 @@ ProductResource.serialize(product)
 #   tags: ["food", "sushi"],
 #   created_at: "2022-11-04T09:49:30.297+09:00"
 # }
+
+# Generate json schema
+ProductResource.to_json_schema
+
+# Generate openapi-compatible json schema
+ProductResource.to_openapi
 ```
 
 ## Feature
