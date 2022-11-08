@@ -328,21 +328,37 @@ RSpec.describe Keema::Resource do
       end
 
       describe 'serialize selected resource' do
-        it 'returns serialized hash partially' do
-          expect(
-            NestedHasMany::ProductResource
-              .select([
-                :id,
-                product_images: [:id]
-              ])
-              .serialize(product)
-          ).to match(
-            id: Integer,
-            product_images: [
-              { id: Integer },
-              { id: Integer }
-            ]
-          )
+        describe 'serialize(fields: [..])' do
+          it 'returns serialized hash partially' do
+            expect(
+              NestedHasMany::ProductResource.serialize(product, fields: [:id, product_images: [:id]])
+            ).to match(
+              id: Integer,
+              product_images: [
+                { id: Integer },
+                { id: Integer }
+              ]
+            )
+          end
+        end
+
+        describe 'select([..]).serialize' do
+          it 'returns serialized hash partially' do
+            expect(
+              NestedHasMany::ProductResource
+                .select([
+                  :id,
+                  product_images: [:id]
+                ])
+                .serialize(product)
+            ).to match(
+              id: Integer,
+              product_images: [
+                { id: Integer },
+                { id: Integer }
+              ]
+            )
+          end
         end
       end
     end

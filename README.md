@@ -14,7 +14,7 @@ class ProductResource < Keema::Resource
   field :price, Float
   field :status, enum(:published, :unpublished)
   field :description, String, null: true
-  field :image_url?, String  # optional
+  field :image_url, String, optional: true
 
   field :out_of_stock, Bool
   field :tags, [String]
@@ -43,15 +43,176 @@ product = Product.new(
 ProductResource.serialize(product)
 #=>
 # {
-#   :id => 1,
-#   :name => "foo",
-#   :price => 12.3,
-#   :status => "published",
-#   :description => nil,
-#   :out_of_stock => false,
-#   :tags => ["food", "sushi"],
-#   :created_at => "2022-11-04T09:49:30.297+09:00"
+#   id: 1,
+#   name: "foo",
+#   price: 12.3,
+#   status: "published",
+#   description: nil,
+#   out_of_stock: false,
+#   tags: ["food", "sushi"],
+#   created_at: "2022-11-04T09:49:30.297+09:00"
 # }
+```
+
+## Feature
+### JSON serialization
+`.serialize` method serializes an object to a JSON serializable hash.
+It acts as an object presenter.
+
+For example:
+
+```ruby
+class ProductResource < Keema::Resource
+  field :id, Integer
+  field :name, String
+  field :price, Float
+end
+
+# `serialize` method takes an object.
+ProductResource.serialize(product)
+#=>
+# {
+#   id: 1,
+#   name: "foo",
+#   price: 10.0
+# }
+
+# Also, it can take an array of objects. It returns output as an array.
+ProductResource.serialize(products)
+#=>
+# [
+#   {
+#     id: 1,
+#     name: 'foo',
+#     price: 10.0
+#   },
+#   {
+#     id: 2,
+#     name: 'bar',
+#     price: 20.0
+#   }
+# ]
+```
+
+In Rails, you can use the resource in action like this:
+
+```ruby
+def index
+  products = Product.order(:id).limit(20)
+  render json: ProductResource.serialize(products)
+end
+```
+
+#### Selecting fields
+By default, `serialize` renders all of not-optional fields.
+
+```ruby
+class ProductResource < Keema::Resource
+  field :id, Integer  # default is optional: false
+  field :name, String
+  field :price, Float
+  field :description, String, optional: true
+end
+ProductResource.serialize(products)
+#=>
+# [
+#   {
+#     id: 1,
+#     name: "foo",
+#     price: 10.0
+#   }
+# ]
+```
+
+To include optional fields, you need to specify them in fields option explicitly:
+
+```ruby
+ProductResource.serialize(products, fields: [
+  :*, # `*` means all of not-optional fields
+  :description
+])
+#=>
+# [
+#   {
+#     id: 1,
+#     name: "foo",
+#     price: 10.0,
+#     description: 'long product description'
+#   }
+# ]
+```
+
+In some cases, you may want to render only partial fields because of performance reason etc.
+
+```ruby
+ProductResource.serialize(products, fields: [
+  :id,
+  :name,
+])
+#=>
+# [
+#   {
+#     id: 1,
+#     name: 'foo',
+#   },
+#   {
+#     id: 2,
+#     name: 'bar',
+#   }
+# ]
+```
+
+#### Nested resource
+It can render nested objects by specifying another resource in field type.
+
+For example, when an object has has-many associations,
+
+```ruby
+class ProductResource < Keema::Resource
+  field :id, Integer
+  field :name, String
+  field :product_images, [ProductImageResource]  # `[A]` means Array of A
+end
+
+class ProductImageResource < Keema::Resource
+  field :id, Integer
+  field :url, String
+end
+
+ProductResource.serialize(products)
+#=>
+# {
+#   id: 1,
+#   name: 'foo',
+#   product_images: [
+#     { id: 1, url: 'foo.png' },
+#     { id: 2, url: 'bar.png' },
+#   ]
+# }
+```
+
+Also, it can select partial fields of nested resource.
+
+```ruby
+ProductResource.serialize(products, fields: [
+  :id,
+  :name,
+  product_images: [:id]  # nested fields can be specified with hash form
+])
+```
+
+### Schema generation
+It can generate JSON Schema and OpenAPI schema with `.to_openapi` and `.to_json_schema`.
+
+```ruby
+class ProductResource < Keema::Resource
+  field :id, Integer
+  field :name, String
+  field :price, Float
+  field :created_at, Time
+end
+
+ProductResource.to_openapi
 ```
 
 
@@ -79,7 +240,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/keema-resource. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/keema-resource/blob/main/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/uiur/keema-resource. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/uiur/keema-resource/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -87,4 +248,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the Keema::Resource project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/keema-resource/blob/main/CODE_OF_CONDUCT.md).
+Everyone interacting in the Keema::Resource project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/uiur/keema-resource/blob/main/CODE_OF_CONDUCT.md).
