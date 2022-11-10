@@ -251,12 +251,56 @@ end
 Product = Struct.new(:id, keyword_init: true)
 product = Product.new(id: 1234)
 
-pp ProductResource.serialize(product, fields: [
+ProductResource.serialize(product, fields: [
   :id, :fast
 ])
 #=> {:id=>1234, :fast=>"fast"}
 # It returns data with no problem.
 # Only selected fields are rendered. The slow field is not evaluated.
+```
+
+### Using context
+In some cases, you may need to use context other than an object. (e.g. current_user etc.)
+
+`serialize` method can take context hash as an option. Context can be accessed from methods.
+
+
+```ruby
+class PostResource < Keema::Resource
+  field :id, Integer
+  field :title, String
+  field :editable, Bool
+
+  def editable
+    context[:current_user].post_ids.include?(object.id)
+  end
+end
+
+User = Struct.new(:post_ids, keyword_init: true)
+Post = Struct.new(:id, :title, keyword_init: true)
+
+current_user = User.new(post_ids: [1])
+post = Post.new(id: 1, title: 'foo')
+
+PostResource.serialize(post, context: {
+  current_user: current_user
+})
+#=> {:id=>1, :title=>"foo", :editable=>true}
+```
+
+Also, context hash is passed into nested resources.
+
+```ruby
+class UserResource < Keema::Resource
+  field :id, Integer
+  field :posts, [PostResource]
+end
+
+user = OpenStruct.new(id: 2, posts: [post])
+UserResource.serialize(user, context: {
+  current_user: current_user
+})
+#=> {:id=>2, :posts=>[{:id=>1, :title=>"foo", :editable=>true}]}
 ```
 
 ## Schema generation
