@@ -54,8 +54,7 @@ ProductResource.to_json_schema
 ProductResource.to_openapi
 ```
 
-## Feature
-### JSON serialization
+## JSON serialization
 `.serialize` method serializes an object to a JSON serializable hash.
 It acts as an object presenter.
 
@@ -103,7 +102,7 @@ def index
 end
 ```
 
-#### Selecting fields
+### Selecting fields
 By default, `serialize` renders all of not-optional fields.
 
 ```ruby
@@ -162,7 +161,7 @@ ProductResource.serialize(products, fields: [
 # ]
 ```
 
-#### Nested resource
+### Nested resource
 It can render nested objects by specifying another resource in field type.
 
 For example, when an object has has-many associations,
@@ -201,7 +200,7 @@ ProductResource.serialize(products, fields: [
 ])
 ```
 
-#### Adding methods
+### Adding methods
 You can add methods in resource class and override the behavior of the original object.
 
 ```ruby
@@ -227,7 +226,7 @@ ProductResource.serialize(product)
 #=> {:id=>"product-1234", :hex=>"71ab70d16b5b0801357a6c088abdbac2"}
 ```
 
-#### Lazy evaluation
+### Lazy evaluation
 Only selected fields are rendered. It doesn't evaluate unnecessary fields.
 
 It helps to avoid performance problems such as N+1.
@@ -260,7 +259,7 @@ pp ProductResource.serialize(product, fields: [
 # Only selected fields are rendered. The slow field is not evaluated.
 ```
 
-### Schema generation
+## Schema generation
 It can generate JSON Schema and OpenAPI schema with `.to_openapi` and `.to_json_schema`.
 
 ```ruby
@@ -292,7 +291,7 @@ ProductResource.to_openapi
 # }
 ```
 
-#### Selecting schema fields
+### Selecting schema fields
 `.select(fields)` method creates a subset of a resource. Selected fields are specified as required.
 
 ```ruby
