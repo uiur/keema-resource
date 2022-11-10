@@ -201,6 +201,65 @@ ProductResource.serialize(products, fields: [
 ])
 ```
 
+#### Adding methods
+You can add methods in resource class and override the behavior of the original object.
+
+```ruby
+require 'securerandom'
+class ProductResource < Keema::Resource
+  field :id, String
+  field :hex, String
+
+  def id
+    # object is the original object (`product` in here)
+    "product-#{object.id}"
+  end
+
+  def hex
+    SecureRandom.hex
+  end
+end
+
+Product = Struct.new(:id, keyword_init: true)
+product = Product.new(id: 1234)
+
+ProductResource.serialize(product)
+#=> {:id=>"product-1234", :hex=>"71ab70d16b5b0801357a6c088abdbac2"}
+```
+
+#### Lazy evaluation
+Only selected fields are rendered. It doesn't evaluate unnecessary fields.
+
+It helps to avoid performance problems such as N+1.
+
+For example:
+
+```ruby
+class ProductResource < Keema::Resource
+  field :id, String
+  field :fast, String
+  field :slow, String
+
+  def fast
+    'fast'
+  end
+
+  def slow
+    sleep 10 && 'slow'
+  end
+end
+
+Product = Struct.new(:id, keyword_init: true)
+product = Product.new(id: 1234)
+
+pp ProductResource.serialize(product, fields: [
+  :id, :fast
+])
+#=> {:id=>1234, :fast=>"fast"}
+# It returns data with no problem.
+# Only selected fields are rendered. The slow field is not evaluated.
+```
+
 ### Schema generation
 It can generate JSON Schema and OpenAPI schema with `.to_openapi` and `.to_json_schema`.
 
